@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #1565c0;     /* Deep Blue */
+      --primary: #1565c0;
       --primary-light: #1e88e5;
       --primary-dark: #0d47a1;
       --text: #212121;
@@ -83,9 +83,6 @@
       text-align: center;
       display: none;
       box-shadow: 0 3px 10px rgba(30, 136, 237, 0.1);
-    }
-    .next-bus-info strong {
-      font-size: 1.1rem;
     }
     .next-bus-time {
       font-size: 1.4rem;
@@ -172,7 +169,6 @@
       border-top: 1px solid #eee;
       margin-top: 3rem;
     }
-    /* Bay Badge Style */
     .bay-badge {
       margin-left: 10px;
       background: var(--primary);
@@ -181,7 +177,6 @@
       border-radius: 4px;
       font-size: 0.85rem;
       font-weight: bold;
-      vertical-align: middle;
     }
     #bay-result {
       font-weight: 600;
@@ -198,12 +193,10 @@
       }
       .bus-item {
         flex-direction: column;
-        font-size: 0.95rem;
       }
       .time {
         text-align: left;
         margin-bottom: 0.3rem;
-        color: var(--primary);
       }
       .route {
         margin-left: 0;
@@ -211,9 +204,6 @@
       .search-box input {
         padding: 12px 16px;
         font-size: 1rem;
-      }
-      .next-bus-time {
-        font-size: 1.2rem;
       }
     }
   </style>
@@ -225,6 +215,7 @@
   </header>
 
   <div class="container">
+    <!-- Search & Next Bus -->
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="🔍 Search destination (e.g., Negombo, Kaduwela, Tangalle)" onkeyup="filterRoutes()">
     </div>
@@ -232,8 +223,8 @@
     <!-- Next Bus Info -->
     <div class="next-bus-info" id="nextBusInfo">
       <strong>🚌 Next Bus</strong>
-      <div class="next-bus-time" id="nextBusTime"></div>
-      <div class="next-bus-bay" id="nextBusBay"></div>
+      <div class="next-bus-time" id="nextBusTime">Leaves at 08:15 AM (in 22 mins)</div>
+      <div class="next-bus-bay" id="nextBusBay">Departure Bay: B18</div>
     </div>
 
     <!-- Western Provincial Expressways -->
@@ -503,48 +494,15 @@
       </div>
     </div>
 
-    <!-- Terminal Bay Plan & Smart Search -->
+    <!-- Terminal Bay Plan -->
     <div class="section">
       <h2 class="section-header">📍 Departure Bays (Terminal Plan)</h2>
       <div class="timetable" id="terminal-info">
-        <p style="color: #555; margin-bottom: 1.2rem;">When you search a destination, the correct departure bay will appear next to it.</p>
-        <!-- Hidden terminal data for JS -->
-        <div style="display: none;" id="terminal-data">
-          <div data-dest="Baddegama">B2</div>
-          <div data-dest="Monaragala">B3</div>
-          <div data-dest="Kandy">B3</div>
-          <div data-dest="Matale">B3</div>
-          <div data-dest="Ampara">B4</div>
-          <div data-dest="Siyambalanduwa">B4</div>
-          <div data-dest="Pottuvil">B4</div>
-          <div data-dest="Badulla">B4</div>
-          <div data-dest="Kataragama">B4</div>
-          <div data-dest="Ambalangoda">B5</div>
-          <div data-dest="Elpitiya">B5</div>
-          <div data-dest="Hambantota">B6</div>
-          <div data-dest="Embilipitiya">B7</div>
-          <div data-dest="Tangalle">B8</div>
-          <div data-dest="Galle">B9</div>
-          <div data-dest="Matara">B10</div>
-          <div data-dest="Panadura">B15</div>
-          <div data-dest="Kaduwela">B15</div>
-          <div data-dest="Giriulla">B15</div>
-          <div data-dest="Horana">B15</div>
-          <div data-dest="Matugama">B16</div>
-          <div data-dest="Aluthgama">B16</div>
-          <div data-dest="Kalutara">B16</div>
-          <div data-dest="Avittawa">B16</div>
-          <div data-dest="Neluwa">B16</div>
-          <div data-dest="Kadawatha">B17</div>
-          <div data-dest="Gampaha">B17</div>
-          <div data-dest="Negombo">B18</div>
-        </div>
-        <!-- Dynamic bay result -->
+        <p style="color: #555; margin-bottom: 1.2rem;">When you search a destination, the correct departure bay will appear.</p>
         <div id="bay-result">
           <span id="bay-text"></span>
         </div>
       </div>
-      <!-- Additional Info -->
       <div class="extra-info">
         <strong>🚍 Makumbura to Kadawatha:</strong> Every 15 mins (05:55 AM – 08:25 PM) • 
         <strong>🚍 to Gampaha:</strong> Every 30 mins (06:30 AM – 07:15 PM)
@@ -575,22 +533,19 @@
       'Negombo': 'B18'
     };
 
-    // Convert time string like "08.15am" to total minutes since midnight
+    // Convert "08.15am" to minutes since midnight
     function timeToMinutes(timeStr) {
-      let time = timeStr.toLowerCase();
-      const isPM = time.includes('pm');
-      time = time.replace('am', '').replace('pm', '');
-      const [hours, minutes] = time.split('.');
+      const match = timeStr.toLowerCase().match(/(\d+)\.(\d+)(am|pm)/);
+      if (!match) return 0;
+      let [_, hours, minutes, period] = match;
       let h = parseInt(hours);
-      let m = parseInt(minutes || '00');
-
-      if (isPM && h !== 12) h += 12;
-      if (!isPM && h === 12) h = 0;
-
+      let m = parseInt(minutes);
+      if (period === 'pm' && h !== 12) h += 12;
+      if (period === 'am' && h === 12) h = 0;
       return h * 60 + m;
     }
 
-    // Format minutes back to readable time (e.g., 8:15 AM)
+    // Format minutes to "8:15 AM"
     function minutesToTime(mins) {
       let h = Math.floor(mins / 60) % 12;
       let m = mins % 60;
@@ -599,36 +554,27 @@
       return `${h}:${m.toString().padStart(2, '0')} ${period}`;
     }
 
-    // Find and display the next bus
+    // Find next bus
     function findNextBus(query) {
-      if (!query) {
-        document.getElementById('nextBusInfo').style.display = 'none';
-        return;
-      }
-
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
       let nextTime = null;
-      let nextDest = null;
+      let nextDest = '';
       let matchedBay = null;
 
-      // Search in both timetables
-      const tables = ['western-timetable', 'long-timetable'];
-      tables.forEach(id => {
+      ['western-timetable', 'long-timetable'].forEach(id => {
         const items = document.getElementById(id).getElementsByClassName('bus-item');
-        for (let item of items) {
-          const routeText = item.textContent.toLowerCase();
-          if (routeText.includes(query)) {
+        Array.from(items).forEach(item => {
+          const text = item.textContent.toLowerCase();
+          if (text.includes(query)) {
             const timeText = item.querySelector('.time').textContent.trim();
             const timeMinutes = timeToMinutes(timeText);
-
             if (timeMinutes >= currentMinutes) {
               if (!nextTime || timeMinutes < nextTime) {
                 nextTime = timeMinutes;
                 nextDest = item.querySelector('.route').textContent.split(' - ')[0];
-                // Find bay
                 for (const [dest, bay] of Object.entries(terminalMap)) {
-                  if (routeText.includes(dest.toLowerCase())) {
+                  if (text.includes(dest.toLowerCase())) {
                     matchedBay = bay;
                     break;
                   }
@@ -636,93 +582,77 @@
               }
             }
           }
-        }
+        });
       });
 
-      const infoBox = document.getElementById('nextBusInfo');
+      const info = document.getElementById('nextBusInfo');
       const timeEl = document.getElementById('nextBusTime');
       const bayEl = document.getElementById('nextBusBay');
 
-      if (nextTime !== null && nextDest) {
+      if (nextTime && nextDest) {
         const minsLeft = nextTime - currentMinutes;
-        const departureTime = minutesToTime(nextTime);
-
-        timeEl.textContent = `Leaves at ${departureTime} (${minsLeft === 0 ? 'now' : `in ${minsLeft} min${minsLeft > 1 ? 's' : ''}`)`;
+        timeEl.textContent = `Leaves at ${minutesToTime(nextTime)} (${minsLeft === 0 ? 'now' : 'in ' + minsLeft + ' min' + (minsLeft > 1 ? 's' : '')})`;
         bayEl.textContent = matchedBay ? `Departure Bay: ${matchedBay}` : '';
-
-        infoBox.style.display = 'block';
+        info.style.display = 'block';
       } else {
-        infoBox.style.display = 'none';
+        info.style.display = 'none';
       }
     }
 
     function filterRoutes() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
-      const sections = ['western-timetable', 'long-timetable'];
       let hasResults = false;
       let matchedBay = null;
 
-      // Reset bay result
-      const bayResult = document.getElementById('bay-result');
-      const bayText = document.getElementById('bay-text');
-      bayResult.style.display = 'none';
+      ['western-timetable', 'long-timetable'].forEach(id => {
+        const items = document.getElementById(id).getElementsByClassName('bus-item');
+        Array.from(items).forEach(item => {
+          const text = item.textContent.toLowerCase();
+          const html = item.innerHTML;
+          let cleanHTML = html.replace(/<span class="bay-badge">.*?<\/span>/g, '').trim();
 
-      sections.forEach(sectionId => {
-        const container = document.getElementById(sectionId);
-        const items = container.getElementsByClassName('bus-item');
-
-        for (let i = 0; i < items.length; i++) {
-          const routeText = items[i].textContent.toLowerCase();
-          const routeHtml = items[i].innerHTML;
-
-          // Remove old bay badge
-          let cleanHTML = routeHtml.replace(/<span class="bay-badge">.*?<\/span>/g, '').trim();
-
-          if (query === "" || routeText.includes(query)) {
-            // Add bay badge
+          if (query === '' || text.includes(query)) {
             for (const [dest, bay] of Object.entries(terminalMap)) {
-              if (routeText.includes(dest.toLowerCase())) {
+              if (text.includes(dest.toLowerCase())) {
                 cleanHTML += ` <span class="bay-badge">Bay ${bay}</span>`;
                 if (!matchedBay) matchedBay = bay;
                 break;
               }
             }
-            items[i].innerHTML = cleanHTML;
-            items[i].style.display = "";
+            item.innerHTML = cleanHTML;
+            item.style.display = '';
             hasResults = true;
           } else {
-            items[i].style.display = "none";
+            item.style.display = 'none';
           }
-        }
-
-        // Show/hide section
-        const section = container.closest('.section');
-        section.style.display = (hasResults && query !== "") ? "" : (query === "" ? "" : "none");
+        });
       });
 
-      // Show bay result
-      if (matchedBay && query !== "") {
-        bayText.innerHTML = `🚌 Your bus departs from <strong>Bay ${matchedBay}</strong>. Check terminal screens for updates.`;
-        bayResult.style.display = "block";
-      } else {
-        bayResult.style.display = "none";
+      // Show bay message
+      const bayResult = document.getElementById('bay-result');
+      const bayText = document.getElementById('bay-text');
+      bayResult.style.display = matchedBay && query ? '' : 'none';
+      if (matchedBay) {
+        bayText.innerHTML = `🚌 Your bus departs from <strong>Bay ${matchedBay}</strong>.`;
       }
 
-      // Update next bus info
-      findNextBus(query);
+      // Update next bus
+      if (query) {
+        findNextBus(query);
+      } else {
+        document.getElementById('nextBusInfo').style.display = 'none';
+      }
+
+      if (query && !hasResults) {
+        alert("🔍 No buses found. Try 'Negombo', 'Kaduwela', or 'Tangalle'.");
+      }
     }
 
-    // Update countdown every minute
+    // Update every minute
     setInterval(() => {
-      const input = document.getElementById('searchInput').value.trim().toLowerCase();
-      if (input) findNextBus(input);
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (query) findNextBus(query);
     }, 60000);
-
-    // Initial load
-    window.onload = () => {
-      const input = document.getElementById('searchInput');
-      if (input.value) filterRoutes();
-    };
   </script>
 </body>
 </html>
