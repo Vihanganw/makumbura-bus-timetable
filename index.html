@@ -147,13 +147,6 @@
       color: var(--text-light);
     }
 
-    .no-result {
-      text-align: center;
-      padding: 2.5rem;
-      color: #999;
-      font-style: italic;
-    }
-
     .extra-info {
       background-color: #e3f2fd;
       padding: 1rem;
@@ -170,6 +163,28 @@
       background: white;
       border-top: 1px solid #eee;
       margin-top: 3rem;
+    }
+
+    /* Bay Badge Style */
+    .bay-badge {
+      margin-left: 10px;
+      background: var(--primary);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      vertical-align: middle;
+    }
+
+    #bay-result {
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin-top: 0.8rem;
+      padding: 10px;
+      background: #e3f2fd;
+      border-radius: 8px;
+      display: none;
     }
 
     @media (max-width: 600px) {
@@ -210,7 +225,6 @@
     <div class="section">
       <h2 class="section-header">Western Provincial Expressways</h2>
       <div class="timetable" id="western-timetable">
-        <!-- Western Timetable Items -->
         <div class="bus-item"><span class="time">05.40am</span> <span class="route">Negombo - Katunayake Interchange</span></div>
         <div class="bus-item"><span class="time">06.10am</span> <span class="route">Negombo - Katunayake Interchange</span></div>
         <div class="bus-item"><span class="time">06.25am</span> <span class="route">Kalutara - Dodangoda Interchange</span></div>
@@ -474,15 +488,55 @@
       </div>
     </div>
 
-    <!-- Additional Info -->
+    <!-- Terminal Bay Plan & Smart Search -->
     <div class="section">
-      <h2 class="section-header">Additional Routes</h2>
-      <div class="timetable">
-        <div class="bus-item"><strong>🚍 Makumbura to Kadawatha:</strong> Every 15 minutes from 05:55 AM to 08:25 PM (varies on busy days)</div>
-        <div class="bus-item"><strong>🚍 Makumbura to Gampaha:</strong> Every 30 minutes from 06:30 AM to 07:15 PM (Last bus on weekends/holidays: 07:00 PM)</div>
-        <div class="extra-info">
-          <small>Note: Schedules may vary on public holidays, Poya days, and peak seasons.</small>
+      <h2 class="section-header">📍 Departure Bays (Terminal Plan)</h2>
+      <div class="timetable" id="terminal-info">
+        <p style="color: #555; margin-bottom: 1.2rem;">When you search a destination, the correct departure bay will appear next to it.</p>
+
+        <!-- Hidden terminal data for JS -->
+        <div style="display: none;" id="terminal-data">
+          <div data-dest="Baddegama">B2</div>
+          <div data-dest="Monaragala">B3</div>
+          <div data-dest="Kandy">B3</div>
+          <div data-dest="Matale">B3</div>
+          <div data-dest="Ampara">B4</div>
+          <div data-dest="Siyambalanduwa">B4</div>
+          <div data-dest="Pottuvil">B4</div>
+          <div data-dest="Badulla">B4</div>
+          <div data-dest="Kataragama">B4</div>
+          <div data-dest="Ambalangoda">B5</div>
+          <div data-dest="Elpitiya">B5</div>
+          <div data-dest="Hambantota">B6</div>
+          <div data-dest="Embilipitiya">B7</div>
+          <div data-dest="Tangalle">B8</div>
+          <div data-dest="Galle">B9</div>
+          <div data-dest="Matara">B10</div>
+          <div data-dest="Panadura">B15</div>
+          <div data-dest="Kaduwela">B15</div>
+          <div data-dest="Giriulla">B15</div>
+          <div data-dest="Horana">B15</div>
+          <div data-dest="Matugama">B16</div>
+          <div data-dest="Aluthgama">B16</div>
+          <div data-dest="Kalutara">B16</div>
+          <div data-dest="Avittawa">B16</div>
+          <div data-dest="Neluwa">B16</div>
+          <div data-dest="Kadawatha">B17</div>
+          <div data-dest="Gampaha">B17</div>
+          <div data-dest="Negombo">B18</div>
         </div>
+
+        <!-- Dynamic bay result -->
+        <div id="bay-result">
+          <span id="bay-text"></span>
+        </div>
+      </div>
+
+      <!-- Additional Info -->
+      <div class="extra-info">
+        <strong>🚍 Makumbura to Kadawatha:</strong> Every 15 mins (05:55 AM – 08:25 PM) • 
+        <strong>🚍 to Gampaha:</strong> Every 30 mins (06:30 AM – 07:15 PM)
+        <br><small>Note: Schedules may vary on holidays and busy days.</small>
       </div>
     </div>
   </div>
@@ -492,21 +546,57 @@
   </footer>
 
   <script>
+    // Terminal Bay Mapping
+    const terminalMap = {
+      'Baddegama': 'B2',
+      'Monaragala': 'B3', 'Kandy': 'B3', 'Matale': 'B3',
+      'Ampara': 'B4', 'Siyambalanduwa': 'B4', 'Pottuvil': 'B4', 'Badulla': 'B4', 'Kataragama': 'B4',
+      'Ambalangoda': 'B5', 'Elpitiya': 'B5',
+      'Hambantota': 'B6',
+      'Embilipitiya': 'B7',
+      'Tangalle': 'B8',
+      'Galle': 'B9',
+      'Matara': 'B10',
+      'Panadura': 'B15', 'Kaduwela': 'B15', 'Giriulla': 'B15', 'Horana': 'B15',
+      'Matugama': 'B16', 'Aluthgama': 'B16', 'Kalutara': 'B16', 'Avittawa': 'B16', 'Neluwa': 'B16',
+      'Kadawatha': 'B17', 'Gampaha': 'B17',
+      'Negombo': 'B18'
+    };
+
     function filterRoutes() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
       const sections = ['western-timetable', 'long-timetable'];
       let hasResults = false;
+      let matchedBay = null;
+
+      // Reset bay result
+      const bayResult = document.getElementById('bay-result');
+      const bayText = document.getElementById('bay-text');
+      bayResult.style.display = 'none';
 
       sections.forEach(sectionId => {
         const container = document.getElementById(sectionId);
         const items = container.getElementsByClassName('bus-item');
-        let visibleCount = 0;
 
         for (let i = 0; i < items.length; i++) {
           const routeText = items[i].textContent.toLowerCase();
+          const routeHtml = items[i].innerHTML;
+
+          // Remove old bay badge
+          let cleanHTML = routeHtml.replace(/<span class="bay-badge">.*?<\/span>/g, '').trim();
+
           if (query === "" || routeText.includes(query)) {
+            // Find matching bay
+            for (const [dest, bay] of Object.entries(terminalMap)) {
+              if (routeText.includes(dest.toLowerCase())) {
+                cleanHTML += ` <span class="bay-badge">Bay ${bay}</span>`;
+                if (!matchedBay) matchedBay = bay;
+                break;
+              }
+            }
+            items[i].innerHTML = cleanHTML;
             items[i].style.display = "";
-            visibleCount++;
+            hasResults = true;
           } else {
             items[i].style.display = "none";
           }
@@ -514,16 +604,17 @@
 
         // Show/hide section
         const section = container.closest('.section');
-        if (visibleCount === 0 && query !== "") {
-          section.style.display = "none";
-        } else {
-          section.style.display = "";
-          if (visibleCount > 0) hasResults = true;
-        }
+        section.style.display = (hasResults && query !== "") ? "" : (query === "" ? "" : "none");
       });
 
+      // Show bay result
+      if (matchedBay && query !== "") {
+        bayText.innerHTML = `🚌 Your bus departs from <strong>Bay ${matchedBay}</strong>. Check terminal screens for updates.`;
+        bayResult.style.display = "block";
+      }
+
       if (query !== "" && !hasResults) {
-        alert("🔍 No buses found for \"" + query + "\". Please try another destination.");
+        alert("🔍 No buses found for \"" + query + "\". Try 'Negombo', 'Kaduwela', or 'Tangalle'.");
       }
     }
   </script>
