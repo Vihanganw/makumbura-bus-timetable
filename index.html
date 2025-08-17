@@ -72,31 +72,9 @@
       transform: translateY(-1px);
     }
 
-    /* Next Bus Info Box */
-    .next-bus-info {
-      background: #e3f2fd;
-      padding: 1rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      color: #0d47a1;
-      font-family: 'Roboto', sans-serif;
-      text-align: center;
-      display: none;
-      box-shadow: 0 3px 10px rgba(30, 136, 237, 0.1);
-    }
-    .next-bus-time {
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin: 0.3rem 0;
-    }
-    .next-bus-bay {
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--primary-dark);
-      margin-top: 0.3rem;
-    }
-
+    /* Hide all sections by default */
     .section {
+      display: none;
       background: var(--card-bg);
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
@@ -104,9 +82,12 @@
       overflow: hidden;
       transition: var(--transition);
     }
-    .section:hover {
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+
+    /* Show only when search results exist */
+    .section.visible {
+      display: block;
     }
+
     .section-header {
       background-color: var(--primary);
       color: white;
@@ -153,22 +134,6 @@
       margin-left: 1.2rem;
       color: var(--text-light);
     }
-    .extra-info {
-      background-color: #e3f2fd;
-      padding: 1rem;
-      font-size: 0.95rem;
-      color: var(--text-light);
-      border-top: 1px solid #bbdefb;
-    }
-    footer {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: #777;
-      font-size: 0.95rem;
-      background: white;
-      border-top: 1px solid #eee;
-      margin-top: 3rem;
-    }
     .bay-badge {
       margin-left: 10px;
       background: var(--primary);
@@ -185,7 +150,23 @@
       padding: 10px;
       background: #e3f2fd;
       border-radius: 8px;
-      display: none;
+      display: block;
+    }
+    .extra-info {
+      background-color: #e3f2fd;
+      padding: 1rem;
+      font-size: 0.95rem;
+      color: var(--text-light);
+      border-top: 1px solid #bbdefb;
+    }
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #777;
+      font-size: 0.95rem;
+      background: white;
+      border-top: 1px solid #eee;
+      margin-top: 3rem;
     }
     @media (max-width: 600px) {
       header h1 {
@@ -216,20 +197,13 @@
   </header>
 
   <div class="container">
-    <!-- Search & Next Bus -->
+    <!-- Search Box -->
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="🔍 Search destination (e.g., Negombo, Kaduwela, Tangalle)" onkeyup="filterRoutes()">
     </div>
 
-    <!-- Next Bus Info -->
-    <div class="next-bus-info" id="nextBusInfo">
-      <strong>🚌 Next Bus</strong>
-      <div class="next-bus-time" id="nextBusTime">Leaves at 08:15 AM</div>
-      <div class="next-bus-bay" id="nextBusBay">Departure Bay: B18</div>
-    </div>
-
     <!-- Western Provincial Expressways -->
-    <div class="section">
+    <div class="section" id="western-section">
       <h2 class="section-header">Western Provincial Expressways</h2>
       <div class="timetable" id="western-timetable">
         <div class="bus-item"><span class="time">05.40am</span> <span class="route">Negombo - Katunayake Interchange</span></div>
@@ -403,7 +377,7 @@
     </div>
 
     <!-- Long-Distance Expressway Services -->
-    <div class="section">
+    <div class="section" id="long-section">
       <h2 class="section-header">Long-Distance Expressway Services</h2>
       <div class="timetable" id="long-timetable">
         <div class="bus-item"><span class="time">05.00am</span> <span class="route">Monaragala - Mattala Interchange</span></div>
@@ -496,7 +470,7 @@
     </div>
 
     <!-- Terminal Bay Plan -->
-    <div class="section">
+    <div class="section" id="terminal-section">
       <h2 class="section-header">📍 Departure Bays (Terminal Plan)</h2>
       <div class="timetable" id="terminal-info">
         <p style="color: #555; margin-bottom: 1.2rem;">When you search a destination, the correct departure bay will appear.</p>
@@ -534,73 +508,24 @@
       'Negombo': 'B18'
     };
 
-    // Find the next bus time (chronologically) for a given destination
-    function findNextBus(query) {
-      if (!query) {
-        document.getElementById('nextBusInfo').style.display = 'none';
-        return;
-      }
-
-      let nextTime = null;
-      let matchedBay = null;
-
-      ['western-timetable', 'long-timetable'].forEach(id => {
-        const items = document.getElementById(id).getElementsByClassName('bus-item');
-        Array.from(items).forEach(item => {
-          const text = item.textContent.toLowerCase();
-          if (text.includes(query)) {
-            const timeText = item.querySelector('.time').textContent.trim();
-            if (!nextTime || timeText < nextTime) {
-              nextTime = timeText;
-              // Find bay
-              for (const [dest, bay] of Object.entries(terminalMap)) {
-                if (text.includes(dest.toLowerCase())) {
-                  matchedBay = bay;
-                  break;
-                }
-              }
-            }
-          }
-        });
-      });
-
-      const info = document.getElementById('nextBusInfo');
-      const timeEl = document.getElementById('nextBusTime');
-      const bayEl = document.getElementById('nextBusBay');
-
-      if (nextTime) {
-        timeEl.textContent = `Leaves at ${formatTime(nextTime)}`;
-        bayEl.textContent = matchedBay ? `Departure Bay: ${matchedBay}` : '';
-        info.style.display = 'block';
-      } else {
-        info.style.display = 'none';
-      }
-    }
-
-    // Format "08.15am" → "8:15 AM"
-    function formatTime(timeStr) {
-      const match = timeStr.toLowerCase().replace('pm', ' PM').replace('am', ' AM').match(/(\d+)\.(\d+) ([ap]m)/);
-      if (!match) return timeStr;
-      let [_, hours, minutes, period] = match;
-      let h = parseInt(hours);
-      if (period === 'pm' && h !== 12) h += 12;
-      if (period === 'am' && h === 12) h = 0;
-      return `${h}:${minutes} ${period.toUpperCase()}`;
-    }
-
     function filterRoutes() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
       let hasResults = false;
       let matchedBay = null;
 
+      // Reset all sections
+      document.getElementById('western-section').classList.remove('visible');
+      document.getElementById('long-section').classList.remove('visible');
+      document.getElementById('terminal-section').classList.add('visible'); // Always show bay info
+
       ['western-timetable', 'long-timetable'].forEach(id => {
         const items = document.getElementById(id).getElementsByClassName('bus-item');
         Array.from(items).forEach(item => {
           const text = item.textContent.toLowerCase();
-          const html = item.innerHTML;
-          let cleanHTML = html.replace(/<span class="bay-badge">.*?<\/span>/g, '').trim();
+          let cleanHTML = item.innerHTML.replace(/<span class="bay-badge">.*?<\/span>/g, '').trim();
 
-          if (query === '' || text.includes(query)) {
+          if (query && text.includes(query)) {
+            // Add bay badge
             for (const [dest, bay] of Object.entries(terminalMap)) {
               if (text.includes(dest.toLowerCase())) {
                 cleanHTML += ` <span class="bay-badge">Bay ${bay}</span>`;
@@ -615,25 +540,27 @@
             item.style.display = 'none';
           }
         });
+
+        // Show the section if it has visible items
+        if (hasResults && id === 'western-timetable') {
+          document.getElementById('western-section').classList.add('visible');
+        }
+        if (hasResults && id === 'long-timetable') {
+          document.getElementById('long-section').classList.add('visible');
+        }
       });
 
-      // Show bay message
+      // Show bay result
       const bayResult = document.getElementById('bay-result');
       const bayText = document.getElementById('bay-text');
-      bayResult.style.display = matchedBay && query ? '' : 'none';
-      if (matchedBay) {
+      if (matchedBay && query) {
         bayText.innerHTML = `🚌 Your bus departs from <strong>Bay ${matchedBay}</strong>.`;
-      }
-
-      // Update next bus
-      if (query) {
-        findNextBus(query);
+        bayResult.style.display = 'block';
+      } else if (query && !matchedBay) {
+        bayText.innerHTML = "❌ No matching destination found.";
+        bayResult.style.display = 'block';
       } else {
-        document.getElementById('nextBusInfo').style.display = 'none';
-      }
-
-      if (query && !hasResults) {
-        alert("🔍 No buses found. Try 'Negombo', 'Kaduwela', or 'Tangalle'.");
+        bayResult.style.display = 'none';
       }
     }
   </script>
