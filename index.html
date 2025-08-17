@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #1565c0;
+      --primary: #1565c0;     /* Deep Blue */
       --primary-light: #1e88e5;
       --primary-dark: #0d47a1;
       --text: #212121;
@@ -193,6 +193,7 @@
       }
       .bus-item {
         flex-direction: column;
+        font-size: 0.95rem;
       }
       .time {
         text-align: left;
@@ -223,7 +224,7 @@
     <!-- Next Bus Info -->
     <div class="next-bus-info" id="nextBusInfo">
       <strong>🚌 Next Bus</strong>
-      <div class="next-bus-time" id="nextBusTime">Leaves at 08:15 AM (in 22 mins)</div>
+      <div class="next-bus-time" id="nextBusTime">Leaves at 08:15 AM</div>
       <div class="next-bus-bay" id="nextBusBay">Departure Bay: B18</div>
     </div>
 
@@ -533,33 +534,14 @@
       'Negombo': 'B18'
     };
 
-    // Convert "08.15am" to minutes since midnight
-    function timeToMinutes(timeStr) {
-      const match = timeStr.toLowerCase().match(/(\d+)\.(\d+)(am|pm)/);
-      if (!match) return 0;
-      let [_, hours, minutes, period] = match;
-      let h = parseInt(hours);
-      let m = parseInt(minutes);
-      if (period === 'pm' && h !== 12) h += 12;
-      if (period === 'am' && h === 12) h = 0;
-      return h * 60 + m;
-    }
-
-    // Format minutes to "8:15 AM"
-    function minutesToTime(mins) {
-      let h = Math.floor(mins / 60) % 12;
-      let m = mins % 60;
-      const period = Math.floor(mins / 60) >= 12 ? 'PM' : 'AM';
-      h = h === 0 ? 12 : h;
-      return `${h}:${m.toString().padStart(2, '0')} ${period}`;
-    }
-
-    // Find next bus
+    // Find the next bus time (chronologically) for a given destination
     function findNextBus(query) {
-      const now = new Date();
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      if (!query) {
+        document.getElementById('nextBusInfo').style.display = 'none';
+        return;
+      }
+
       let nextTime = null;
-      let nextDest = '';
       let matchedBay = null;
 
       ['western-timetable', 'long-timetable'].forEach(id => {
@@ -568,16 +550,13 @@
           const text = item.textContent.toLowerCase();
           if (text.includes(query)) {
             const timeText = item.querySelector('.time').textContent.trim();
-            const timeMinutes = timeToMinutes(timeText);
-            if (timeMinutes >= currentMinutes) {
-              if (!nextTime || timeMinutes < nextTime) {
-                nextTime = timeMinutes;
-                nextDest = item.querySelector('.route').textContent.split(' - ')[0];
-                for (const [dest, bay] of Object.entries(terminalMap)) {
-                  if (text.includes(dest.toLowerCase())) {
-                    matchedBay = bay;
-                    break;
-                  }
+            if (!nextTime || timeText < nextTime) {
+              nextTime = timeText;
+              // Find bay
+              for (const [dest, bay] of Object.entries(terminalMap)) {
+                if (text.includes(dest.toLowerCase())) {
+                  matchedBay = bay;
+                  break;
                 }
               }
             }
@@ -589,14 +568,24 @@
       const timeEl = document.getElementById('nextBusTime');
       const bayEl = document.getElementById('nextBusBay');
 
-      if (nextTime && nextDest) {
-        const minsLeft = nextTime - currentMinutes;
-        timeEl.textContent = `Leaves at ${minutesToTime(nextTime)} (${minsLeft === 0 ? 'now' : 'in ' + minsLeft + ' min' + (minsLeft > 1 ? 's' : '')})`;
+      if (nextTime) {
+        timeEl.textContent = `Leaves at ${formatTime(nextTime)}`;
         bayEl.textContent = matchedBay ? `Departure Bay: ${matchedBay}` : '';
         info.style.display = 'block';
       } else {
         info.style.display = 'none';
       }
+    }
+
+    // Format "08.15am" → "8:15 AM"
+    function formatTime(timeStr) {
+      const match = timeStr.toLowerCase().replace('pm', ' PM').replace('am', ' AM').match(/(\d+)\.(\d+) ([ap]m)/);
+      if (!match) return timeStr;
+      let [_, hours, minutes, period] = match;
+      let h = parseInt(hours);
+      if (period === 'pm' && h !== 12) h += 12;
+      if (period === 'am' && h === 12) h = 0;
+      return `${h}:${minutes} ${period.toUpperCase()}`;
     }
 
     function filterRoutes() {
@@ -647,12 +636,6 @@
         alert("🔍 No buses found. Try 'Negombo', 'Kaduwela', or 'Tangalle'.");
       }
     }
-
-    // Update every minute
-    setInterval(() => {
-      const query = document.getElementById('searchInput').value.toLowerCase().trim();
-      if (query) findNextBus(query);
-    }, 60000);
   </script>
 </body>
 </html>
